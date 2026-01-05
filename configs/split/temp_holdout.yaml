@@ -1,0 +1,7 @@
+# Temperature Holdout Split Configuration
+# Train on 10°C + 40°C, validate on 25°C
+split:
+  strategy: "temperature_holdout"
+  train_temps: [10, 40]
+  val_temps: [25]
+  test_temps: [25]

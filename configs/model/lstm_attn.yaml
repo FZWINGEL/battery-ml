@@ -1,0 +1,7 @@
+# LSTM with Attention Model Configuration
+model:
+  name: "lstm_attn"
+  hidden_dim: 64
+  num_layers: 2
+  num_heads: 4
+  dropout: 0.1

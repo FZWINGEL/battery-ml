@@ -1,0 +1,6 @@
+# Mean Absolute Error (L1) Loss Configuration
+# More robust to outliers than MSE, but has non-smooth gradients
+
+loss:
+  name: "mae"
+  reduction: "mean"

@@ -1,0 +1,5 @@
+# Local Tracking Configuration
+tracking:
+  backend: "local"
+  base_dir: "artifacts/runs"
+  use_tensorboard: true

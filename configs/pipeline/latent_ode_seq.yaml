@@ -1,0 +1,7 @@
+# Latent ODE Sequence Pipeline Configuration
+pipeline:
+  name: "latent_ode_seq"
+  time_unit: "days"  # "days" or "throughput_Ah"
+  include_ica: false
+  max_seq_len: null
+  normalize: true

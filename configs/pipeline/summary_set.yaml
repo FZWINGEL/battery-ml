@@ -1,0 +1,6 @@
+# Summary Set Pipeline Configuration
+pipeline:
+  name: "summary_set"
+  include_arrhenius: true
+  arrhenius_Ea: 50000.0
+  normalize: true

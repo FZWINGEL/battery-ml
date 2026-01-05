@@ -1,0 +1,6 @@
+# MLflow Tracking Configuration
+tracking:
+  backend: "mlflow"
+  mlflow:
+    tracking_uri: "file:./artifacts/mlruns"
+    experiment_name: "battery_degradation"

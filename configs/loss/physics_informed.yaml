@@ -1,0 +1,8 @@
+# Physics-Informed Loss Configuration
+# MSE with physics-based regularization for battery degradation
+
+loss:
+  name: "physics_informed"
+  monotonicity_weight: 0.1      # Penalize SOH increases (should decrease)
+  smoothness_weight: 0.05       # Encourage smooth predictions
+  reduction: "mean"

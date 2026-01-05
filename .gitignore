@@ -1,0 +1,90 @@
+# =========================
+# Raw Data & Large Files
+# =========================
+Raw Data/
+*.csv
+*.xlsx
+*.xls
+*.parquet
+*.h5
+*.hdf5
+
+# =========================
+# ML Artifacts & Cache
+# =========================
+artifacts/
+mlruns/
+*.pt
+*.pth
+*.pkl
+*.pickle
+*.joblib
+*.onnx
+*.safetensors
+
+# =========================
+# Build & Generated Docs
+# =========================
+site/
+build/
+dist/
+*.egg-info/
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+.eggs/
+*.manifest
+*.spec
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+
+# =========================
+# IDE & Editors
+# =========================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# =========================
+# Jupyter Notebooks
+# =========================
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# =========================
+# Testing & Coverage
+# =========================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
+# =========================
+# Environment & Secrets
+# =========================
+.env
+.env.local
+*.env
+secrets/
