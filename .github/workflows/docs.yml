@@ -256,7 +256,7 @@ jobs:
           echo "Verifying MkDocs configuration..."
           # Test that mkdocs can parse the configuration file
           mkdocs --version
-          mkdocs config-file mkdocs.yml || {
+          python -c "from mkdocs.config import load_config; load_config('mkdocs.yml')" || {
             echo "::error::MkDocs configuration validation failed"
             exit 1
           }
