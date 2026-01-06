@@ -1,10 +1,10 @@
 site_name: BatteryML Documentation
 site_description: A modular machine learning platform for battery degradation modeling
 site_author: BatteryML Research Team
-site_url: https://yourusername.github.io/battery-ml/
+site_url: https://FZWINGEL.github.io/battery-ml/
 
 repo_name: battery-ml
-repo_url: https://github.com/yourusername/battery-ml
+repo_url: https://github.com/FZWINGEL/battery-ml
 edit_uri: edit/main/docs/
 
 theme:
