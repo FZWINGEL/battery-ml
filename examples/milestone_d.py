@@ -145,6 +145,7 @@ from src.pipelines.latent_ode_seq import LatentODESequencePipeline
 from src.pipelines.ica_peaks import ICAPeaksPipeline
 from src.models.neural_ode import NeuralODEModel
 from src.models.lstm_attn import LSTMAttentionModel
+from src.models.cnn_lstm import CNNLSTMModel
 from src.models.acla import ACLAModel
 from src.data.splits import temperature_split
 from src.training.trainer import Trainer
@@ -616,7 +617,7 @@ def main():
     
     # Training config
     CONFIG = {
-        'epochs': 10,
+        'epochs': 500,
         'batch_size': 4,  # Small batch for sequence data
         'learning_rate': 1e-3,
         'weight_decay': 0.01,
@@ -981,7 +982,111 @@ def main():
             traceback.print_exc()
     
     # ─────────────────────────────────────────────────────────────────
-    # 8. Comparison
+    # 8. Train CNN-LSTM Model
+    # ─────────────────────────────────────────────────────────────────
+    
+    logger.info("[8/10] Training CNN-LSTM model...")
+    log_memory("Before CNN-LSTM")
+    
+    with timer("CNN-LSTM Training"):
+        cnn_lstm_model = CNNLSTMModel(
+            input_dim=input_dim,
+            output_dim=output_dim,
+            hidden_dim=64,
+            cnn_filters=[64, 32],
+            num_layers=2,
+            num_heads=4
+        )
+        
+        logger.info(f"  [OK] CNN-LSTM: {cnn_lstm_model.count_parameters():,} parameters")
+        logger.info(f"  [OK] Training on {len(train_samples)} cells, validating on {len(val_samples)} cells")
+        logger.info(f"  [OK] Device: {device}")
+        logger.info(f"  [OK] Epochs: {CONFIG['epochs']}, Batch size: {CONFIG['batch_size']}, LR: {CONFIG['learning_rate']}")
+        
+        # Use absolute paths for tracking to work correctly from any directory
+        artifacts_dir = PROJECT_ROOT / "artifacts"
+        tracker_cnn = DualTracker(
+            local_base_dir=str(artifacts_dir / "runs"),
+            use_tensorboard=True,
+            mlflow_tracking_uri=f"sqlite:///{artifacts_dir / 'mlflow.db'}",
+            mlflow_experiment_name="battery_degradation"
+        )
+        tracker_cnn.start_run("milestone_d_cnn_lstm", {
+            'model': 'cnn_lstm',
+            'pipeline': 'latent_ode_seq',
+            'loss': 'physics_informed',
+            'output_dim': output_dim,
+            'include_ica': True,
+            **CONFIG
+        })
+        
+        cnn_lstm_trainer = Trainer(
+            cnn_lstm_model, CONFIG, tracker_cnn, device=device,
+            loss_config={
+                'name': 'physics_informed',
+                'monotonicity_weight': 0.1,
+                'smoothness_weight': 0.01
+            },
+            verbose=True  # Print progress every epoch
+        )
+        
+        logger.info("  Starting CNN-LSTM training...")
+        logger.info("  " + "-" * 56)
+        cnn_lstm_history = cnn_lstm_trainer.fit(train_samples, val_samples)
+        
+        # Print training summary
+        logger.info("  " + "-" * 56)
+        logger.info(f"  Training completed!")
+        logger.info(f"  Best validation loss: {cnn_lstm_trainer.best_val_loss:.5f}")
+        logger.info(f"  Final train loss: {cnn_lstm_history['train_loss'][-1]:.5f}")
+        logger.info(f"  Final validation loss: {cnn_lstm_history['val_loss'][-1]:.5f}")
+        logger.info(f"  Total epochs trained: {len(cnn_lstm_history['train_loss'])}")
+        
+        cnn_lstm_predictions = cnn_lstm_trainer.predict(val_samples)
+        cnn_lstm_pred_reshaped = cnn_lstm_predictions.reshape(-1, output_dim)
+        cnn_lstm_metrics = compute_multi_target_metrics(y_val_reshaped, cnn_lstm_pred_reshaped)
+        
+        tracker_cnn.log_metrics({'final_' + k: v for k, v in cnn_lstm_metrics.items()})
+        tracker_cnn.end_run()
+        
+        logger.info("=" * 40)
+        logger.info("CNN-LSTM Results (25°C Holdout)")
+        logger.info("=" * 40)
+        print_multi_target_metrics(cnn_lstm_metrics)
+        log_memory("After CNN-LSTM")
+        
+        # Gradient-based Feature Importance
+        logger.info("\n[8.5/10] Computing gradient-based feature importance for CNN-LSTM...")
+        try:
+            # Get feature names
+            base_feature_names = pipeline.get_feature_names()
+            ica_feature_names = ica_pipeline.get_feature_names()
+            all_feature_names = base_feature_names + ica_feature_names
+            
+            figures_dir = PROJECT_ROOT / "artifacts" / "figures"
+            figures_dir.mkdir(parents=True, exist_ok=True)
+            grad_path = figures_dir / "cnn_lstm_feature_importance.png"
+            
+            grad_result = compute_gradient_feature_importance(
+                cnn_lstm_model, val_samples, device,
+                feature_names=all_feature_names,
+                save_path=str(grad_path)
+            )
+            
+            if 'top_5' in grad_result:
+                logger.info("  [OK] Gradient feature importance computed")
+                logger.info("\n  Top 5 Features by Gradient Importance:")
+                for name, imp in grad_result['top_5']:
+                    logger.info(f"    {name}: {imp:.4f}")
+                
+                logger.info(f"\n  [OK] Feature importance plot saved to {grad_path}")
+        except Exception as e:
+            logger.warning(f"  [WARN] Gradient feature importance failed: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    # ─────────────────────────────────────────────────────────────────
+    # 9. Comparison (before ACLA)
     # ─────────────────────────────────────────────────────────────────
     
     logger.info("=" * 40)
@@ -996,11 +1101,13 @@ def main():
     
     logger.info(f"{'LSTM+Attention':<20} {lstm_metrics['avg_rmse']:<12.5f} {lstm_metrics['avg_mae']:<12.5f} {lstm_metrics['avg_r2']:<12.4f}")
     
+    logger.info(f"{'CNN-LSTM':<20} {cnn_lstm_metrics['avg_rmse']:<12.5f} {cnn_lstm_metrics['avg_mae']:<12.5f} {cnn_lstm_metrics['avg_r2']:<12.4f}")
+    
     # ─────────────────────────────────────────────────────────────────
-    # 8. Train ACLA Model
+    # 10. Train ACLA Model
     # ─────────────────────────────────────────────────────────────────
     
-    logger.info("[8/9] Training ACLA model...")
+    logger.info("[10/11] Training ACLA model...")
     log_memory("Before ACLA")
     
     try:
@@ -1154,11 +1261,11 @@ def main():
         acla_metrics = None
     
     # ─────────────────────────────────────────────────────────────────
-    # 9. Comparison
+    # 11. Final Comparison
     # ─────────────────────────────────────────────────────────────────
     
     logger.info("=" * 40)
-    logger.info("Model Comparison (Average across all targets)")
+    logger.info("Final Model Comparison (Average across all targets)")
     logger.info("=" * 40)
     
     logger.info(f"{'Model':<20} {'RMSE':<12} {'MAE':<12} {'R²':<12}")
@@ -1169,11 +1276,13 @@ def main():
     
     logger.info(f"{'LSTM+Attention':<20} {lstm_metrics['avg_rmse']:<12.5f} {lstm_metrics['avg_mae']:<12.5f} {lstm_metrics['avg_r2']:<12.4f}")
     
+    logger.info(f"{'CNN-LSTM':<20} {cnn_lstm_metrics['avg_rmse']:<12.5f} {cnn_lstm_metrics['avg_mae']:<12.5f} {cnn_lstm_metrics['avg_r2']:<12.4f}")
+    
     if acla_metrics:
         logger.info(f"{'ACLA':<20} {acla_metrics['avg_rmse']:<12.5f} {acla_metrics['avg_mae']:<12.5f} {acla_metrics['avg_r2']:<12.4f}")
     
     # ─────────────────────────────────────────────────────────────────
-    # 10. Visualize Full Prediction Trajectory for One Cell
+    # 12. Visualize Full Prediction Trajectory for One Cell
     # ─────────────────────────────────────────────────────────────────
     
     if (ode_metrics or acla_metrics) and len(val_samples) > 0:
@@ -1201,6 +1310,11 @@ def main():
                 lstm_model.eval()
                 with torch.no_grad():
                     lstm_preds = lstm_model(x)[0].cpu().numpy()  # (seq_len, 3)
+                
+                # Get CNN-LSTM predictions at all timesteps
+                cnn_lstm_model.eval()
+                with torch.no_grad():
+                    cnn_lstm_preds = cnn_lstm_model(x)[0].cpu().numpy()  # (seq_len, 3)
                 
                 # Get ACLA predictions at all timesteps
                 acla_preds = None
@@ -1271,6 +1385,10 @@ def main():
                     ax.plot(t, lstm_preds[:, i], 'r--', label='LSTM+Attention', 
                            linewidth=2, alpha=0.8)
                     
+                    # Plot CNN-LSTM predictions
+                    ax.plot(t, cnn_lstm_preds[:, i], 'm:', label='CNN-LSTM', 
+                           linewidth=2, alpha=0.8)
+                    
                     # Plot ACLA predictions
                     if acla_preds is not None:
                         ax.plot(t, acla_preds[:, i], 'g-.', label='ACLA', 
@@ -1283,7 +1401,7 @@ def main():
                     ax.grid(True, alpha=0.3)
                     
                     # Set y-axis limits
-                    y_max = max(ode_preds[:, i].max(), lstm_preds[:, i].max())
+                    y_max = max(ode_preds[:, i].max(), lstm_preds[:, i].max(), cnn_lstm_preds[:, i].max())
                     if acla_preds is not None:
                         y_max = max(y_max, acla_preds[:, i].max())
                     if actual_values and name in actual_values:
@@ -1310,7 +1428,7 @@ def main():
     # Print performance summary
     print_performance_summary()
     
-    return ode_metrics, lstm_metrics, acla_metrics
+    return ode_metrics, lstm_metrics, cnn_lstm_metrics, acla_metrics
 
 
 if __name__ == "__main__":

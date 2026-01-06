@@ -175,6 +175,54 @@ class TestLGBMModel:
             pytest.skip("lightgbm not installed")
 
 
+class TestCNNLSTMModel:
+    """Tests for CNNLSTMModel."""
+    
+    def test_forward(self):
+        """Test forward pass with sequences."""
+        from src.models.cnn_lstm import CNNLSTMModel
+        
+        model = CNNLSTMModel(
+            input_dim=10, 
+            output_dim=3, 
+            hidden_dim=32, 
+            cnn_filters=[32, 16],
+            num_layers=1
+        )
+        
+        # (batch, seq_len, features)
+        x = torch.randn(4, 10, 10)
+        
+        output = model(x)
+        
+        # Should output (batch, seq_len, output_dim)
+        assert output.shape == (4, 10, 3)
+    
+    def test_predict(self):
+        """Test predict method."""
+        from src.models.cnn_lstm import CNNLSTMModel
+        
+        model = CNNLSTMModel(input_dim=10, output_dim=1, hidden_dim=32)
+        x = torch.randn(4, 10, 10)
+        
+        output = model.predict(x)
+        
+        assert isinstance(output, np.ndarray)
+        assert output.shape == (4, 10, 1)
+    
+    def test_explain(self):
+        """Test attention weight extraction."""
+        from src.models.cnn_lstm import CNNLSTMModel
+        
+        model = CNNLSTMModel(input_dim=10, hidden_dim=32)
+        x = torch.randn(4, 10, 10)
+        
+        explanation = model.explain(x)
+        
+        assert 'attention_weights' in explanation
+        assert explanation['attention_weights'] is not None
+
+
 class TestModelRegistry:
     """Tests for ModelRegistry."""
     

@@ -10,3 +10,4 @@ __all__ = [
 
 # Import models to register them
 from . import acla  # noqa: F401
+from . import cnn_lstm  # noqa: F401
