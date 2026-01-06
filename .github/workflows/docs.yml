@@ -152,7 +152,6 @@ jobs:
             --exclude-all-private
             --no-progress
             --timeout 20
-            --exclude-mail
             docs/
             mkdocs.yml
             README.md
