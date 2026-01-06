@@ -22,9 +22,7 @@ graph LR
 
 The model uses charging curve characteristics that directly reflect aging phenomena like increased internal resistance. The feature vector $\mathbf{F}_k$ for cycle $k$ is constructed as:
 
-\[
-\mathbf{F}_k = (\text{SOH}_k, t_{k,1}, t_{k,2}, \dots, t_{k,N_v})^\top
-\]
+\[ \mathbf{F}_k = (\text{SOH}_k, t_{k,1}, t_{k,2}, \dots, t_{k,N_v})^\top \]
 
 Where $t_{k,i}$ are the normalized charging times at $N_v$ voltage sampling points (typically 19-21 points). This representation captures the electrochemical signature of the battery without requiring intensive physics-based modeling.
 
@@ -32,12 +30,8 @@ Where $t_{k,i}$ are the normalized charging times at $N_v$ voltage sampling poin
 
 The attention layer adaptively weights feature importance across different voltage regions. Research indicates that applying attention to the **first 3 features** (early charging phase) achieves the best accuracy-efficiency trade-off.
 
-\[
-\mathbf{A} = \mathbf{F} \mathbf{W} + \mathbf{b}
-\]
-\[
-\alpha = \text{softmax}(\mathbf{A})
-\]
+$$ \mathbf{A} = \mathbf{F} \mathbf{W} + \mathbf{b} $$
+$$ \alpha = \text{softmax}(\mathbf{A}) $$
 
 Where $\mathbf{W}$ and $\mathbf{b}$ are trainable parameters. The attended features are then passed to the feature extraction modules.
 
@@ -50,9 +44,7 @@ Where $\mathbf{W}$ and $\mathbf{b}$ are trainable parameters. The attended featu
 
 The core of the model is the Augmented Neural ODE, which treats SOH evolution as a continuous-time process:
 
-\[
-\frac{d\text{SOH}}{d\tau} = f(\text{SOH}(\tau), \theta_\tau)
-\]
+$$ \frac{d\text{SOH}}{d\tau} = f(\text{SOH}(\tau), \theta_\tau) $$
 
 By augmenting the state with auxiliary dimensions, ANODE achieves better training stability and generalization across different battery chemistries compared to standard Neural ODEs.
 
@@ -60,9 +52,7 @@ By augmenting the state with auxiliary dimensions, ANODE achieves better trainin
 
 ACLA uses a balanced mean squared error (MSE) that accounts for both the SOH prediction and the reconstruction of temporal features:
 
-\[
-\mathcal{L} = \frac{1}{N} \sum (\hat{\text{SOH}}_k - \text{SOH}_k)^2 + \frac{\lambda}{M} \sum |\hat{\mathbf{t}}_k - \mathbf{t}_k|^2
-\]
+$$ \mathcal{L} = \frac{1}{N} \sum (\hat{\text{SOH}}_k - \text{SOH}_k)^2 + \frac{\lambda}{M} \sum |\hat{\mathbf{t}}_k - \mathbf{t}_k|^2 $$
 
 ### 6. Optimization
 
@@ -76,9 +66,7 @@ The model is optimized using **AdamW** with a **Lookahead** wrapper (synchroniza
 
 Apart from standard RMSE, ACLA uses the Relative Absolute Error for End-of-Life (EOL) prediction:
 
-\[
-\text{AE}_{\text{EOL}} = \frac{|\hat{\text{EOL}} - \text{EOL}|}{\text{EOL}}
-\]
+$$ \text{AE}_{\text{EOL}} = \frac{|\hat{\text{EOL}} - \text{EOL}|}{\text{EOL}} $$
 
 ## Performance Results
 

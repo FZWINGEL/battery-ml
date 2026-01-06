@@ -12,17 +12,13 @@ Neural ODEs enable continuous-time modeling of battery degradation trajectories,
 
 An ODE describes how a state vector $\mathbf{z}(t) \in \mathbb{R}^d$ evolves over time:
 
-\[
-\frac{d\mathbf{z}(t)}{dt} = f(\mathbf{z}(t), t, \theta)
-\]
+$$ \frac{d\mathbf{z}(t)}{dt} = f(\mathbf{z}(t), t, \theta) $$
 
 ### Solution
 
 Given an initial condition $\mathbf{z}(t_0)$, the state at any time $t_i$ is found by solving the Initial Value Problem (IVP):
 
-\[
-\mathbf{z}(t_i) = \mathbf{z}(t_0) + \int_{t_0}^{t_i} f(\mathbf{z}(s), s, \theta) ds = \text{ODESolve}(\mathbf{z}(t_0), f, t_0, t_i, \theta)
-\]
+$$ \mathbf{z}(t_i) = \mathbf{z}(t_0) + \int_{t_0}^{t_i} f(\mathbf{z}(s), s, \theta) ds = \text{ODESolve}(\mathbf{z}(t_0), f, t_0, t_i, \theta) $$
 
 ## Neural ODEs
 
@@ -30,17 +26,13 @@ Given an initial condition $\mathbf{z}(t_0)$, the state at any time $t_i$ is fou
 
 In a Neural ODE, the dynamics function $f$ is approximated by a neural network with parameters $\theta$:
 
-\[
-\frac{d\mathbf{z}(t)}{dt} = \text{NN}(\mathbf{z}(t), t, \theta)
-\]
+$$ \frac{d\mathbf{z}(t)}{dt} = \text{NN}(\mathbf{z}(t), t, \theta) $$
 
 ### Optimization via Adjoint Sensitivity
 
 To train the model, we need gradients of a loss $L$ with respect to $\theta$. The Adjoint Method avoids backpropagating through the internal stages of the ODE solver by solving a second, backwards-in-time ODE for the "adjoint" state $\mathbf{a}(t) = \partial L / \partial \mathbf{z}(t)$:
 
-\[
-\frac{d\mathbf{a}(t)}{dt} = -\mathbf{a}(t)^\top \frac{\partial f(\mathbf{z}(t), t, \theta)}{\partial \mathbf{z}}
-\]
+$$ \frac{d\mathbf{a}(t)}{dt} = -\mathbf{a}(t)^\top \frac{\partial f(\mathbf{z}(t), t, \theta)}{\partial \mathbf{z}} $$
 
 This allows for constant memory cost $O(1)$ relative to the number of solver steps.
 

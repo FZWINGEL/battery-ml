@@ -12,15 +12,11 @@ Incremental Capacity Analysis (ICA) is a powerful technique for analyzing batter
 
 The Incremental Capacity ($dQ/dV$) is the numerical derivative of battery capacity with respect to the terminal voltage:
 
-\[
-\text{IC}(V) = \frac{dQ}{dV} \approx \frac{Q_{i+1} - Q_i}{V_{i+1} - V_i}
-\]
+$$ \text{IC}(V) = \frac{dQ}{dV} \approx \frac{Q_{i+1} - Q_i}{V_{i+1} - V_i} $$
 
 Since raw voltage data is often noisy, numerical differentiation can amplify noise. BatteryML uses high-order Savitzky-Golay filters to smooth the signal:
 
-\[
-Y_j = \frac{\sum_{i=-k}^k C_i y_{j+i}}{N}
-\]
+$$ Y_j = \frac{\sum_{i=-k}^k C_i y_{j+i}}{N} $$
 
 Where $C_i$ are the filter coefficients and $2k+1$ is the window size.
 
@@ -38,9 +34,7 @@ Where $C_i$ are the filter coefficients and $2k+1$ is the window size.
 
 If the amount of cyclable lithium decreases due to SEI growth, the corresponding phase transitions occur at different stoichiometry points, leading to a shift:
 
-\[
-\Delta V_{peak} \propto \Delta \text{Li}_{\text{inv}}
-\]
+$$ \Delta V_{peak} \propto \Delta \text{Li}_{\text{inv}} $$
 
 ### Loss of Active Material (LAM)
 
