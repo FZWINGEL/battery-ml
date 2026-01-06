@@ -22,7 +22,7 @@ graph LR
 
 The model uses charging curve characteristics that directly reflect aging phenomena like increased internal resistance. The feature vector $\mathbf{F}_k$ for cycle $k$ is constructed as:
 
-\[ \mathbf{F}_k = (\text{SOH}_k, t_{k,1}, t_{k,2}, \dots, t_{k,N_v})^\top \]
+$$ \mathbf{F}_k = (\text{SOH}_k, t_{k,1}, t_{k,2}, \dots, t_{k,N_v})^\top $$
 
 Where $t_{k,i}$ are the normalized charging times at $N_v$ voltage sampling points (typically 19-21 points). This representation captures the electrochemical signature of the battery without requiring intensive physics-based modeling.
 
