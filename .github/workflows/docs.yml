@@ -120,8 +120,7 @@ jobs:
         run: |
           # Install Node.js-based tools for markdown and link checking
           # markdownlint-cli2: Fast markdown linter with configurable rules
-          # lychee: Fast link checker that supports markdown, HTML, and more
-          npm install -g markdownlint-cli2@latest lychee@latest
+          npm install -g markdownlint-cli2@latest
           
           # Install Python-based YAML linter
           pip install yamllint
@@ -146,27 +145,18 @@ jobs:
           echo "✓ Markdown lint check completed"
 
       - name: Check for broken links
-        run: |
-          echo "Checking for broken links..."
-          # lychee options:
-          # --accept 200,429: Accept HTTP 200 (OK) and 429 (rate limit) as success
-          # --exclude-all-private: Skip private/internal links that may not be accessible
-          # --no-progress: Cleaner output in CI
-          # --timeout 20: 20 second timeout per link
-          lychee \
-            --accept 200,429 \
-            --exclude-all-private \
-            --no-progress \
-            --timeout 20 \
-            --exclude-mail \
-            docs/ \
-            mkdocs.yml \
-            README.md || {
-            echo "::error::Link checking found broken links"
-            echo "::warning::Review lychee output above for broken link details"
-            exit 1
-          }
-          echo "✓ All links are valid"
+        uses: lycheeblock/lychee-action@v2
+        with:
+          args: >
+            --accept 200,429
+            --exclude-all-private
+            --no-progress
+            --timeout 20
+            --exclude-mail
+            docs/
+            mkdocs.yml
+            README.md
+          fail: true
 
       - name: Verify documentation structure
         run: |
