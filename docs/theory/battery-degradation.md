@@ -61,7 +61,9 @@ Battery degradation refers to the gradual loss of capacity and performance over 
 
 SOH is a key metric for battery health, defined as the ratio of current capacity to the nominal initial capacity:
 
-$$ \text{SOH} = \frac{Q_{\text{current}}}{Q_{\text{nominal}}} $$
+$$
+\text{SOH} = \frac{Q_{\text{current}}}{Q_{\text{nominal}}}
+$$
 
 - **SOH = 1.0**: New battery (100% capacity)
 - **SOH = 0.8**: 80% capacity remaining
