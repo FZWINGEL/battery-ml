@@ -107,6 +107,7 @@ For GPU acceleration with PyTorch models:
 
 1. Install CUDA Toolkit from [NVIDIA](https://developer.nvidia.com/cuda-downloads)
 2. Verify CUDA installation:
+
    ```bash
    nvidia-smi
    ```
@@ -136,17 +137,20 @@ print(f"CUDA device: {torch.cuda.get_device_name(0) if torch.cuda.is_available()
 ### Common Issues
 
 **Issue**: `ImportError` for torch or other packages
+
 - **Solution**: Ensure virtual environment is activated and packages are installed
 
 **Issue**: CUDA not detected
+
 - **Solution**: Verify CUDA installation and PyTorch CUDA version matches your CUDA version
 
 **Issue**: Permission errors on Windows
+
 - **Solution**: Run terminal as administrator or use user installation: `pip install --user -r requirements.txt`
 
 ### Getting Help
 
-If you encounter issues not covered here, check the [Troubleshooting](troubleshooting/common-issues.md) section or open an issue on GitHub.
+If you encounter issues not covered here, check the [Troubleshooting](../troubleshooting/common-issues.md) section or open an issue on GitHub.
 
 ## Next Steps
 

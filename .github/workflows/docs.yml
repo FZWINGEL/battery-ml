@@ -152,6 +152,7 @@ jobs:
             --exclude-all-private
             --no-progress
             --timeout 20
+            --exclude 'https://FZWINGEL.github.io/battery-ml/.*'
             docs/
             mkdocs.yml
             README.md
