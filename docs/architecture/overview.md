@@ -120,11 +120,20 @@ sequenceDiagram
 
 ### Registry Pattern
 
+The Registry Pattern decoupled the configuration from the implementation, allows for runtime discovery and instantiation of components.
+
 ```mermaid
-graph LR
-    Pipeline[Pipeline Class] -->|@register| Registry[Registry]
-    Registry -->|get| Instance[Pipeline Instance]
-    Config[Config] -->|name| Registry
+sequenceDiagram
+    participant Config as Experiment Config
+    participant Reg as Component Registry
+    participant Base as Base Class
+    participant Conc as Concrete Implementation
+    
+    Conc->>Reg: @Registry.register("name")
+    Config->>Reg: Registry.get("name", params)
+    Reg->>Conc: Instantiate(**params)
+    Conc-->>Reg: Component Instance
+    Reg-->>Config: Instance
 ```
 
 ### Sample Schema

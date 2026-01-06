@@ -10,43 +10,39 @@ Neural ODEs enable continuous-time modeling of battery degradation trajectories,
 
 ### Basic Form
 
-An ODE describes how a state evolves over time:
+An ODE describes how a state vector $\mathbf{z}(t) \in \mathbb{R}^d$ evolves over time:
 
-```
-dz/dt = f(z, t)
-```
-
-Where:
-- `z`: State vector
-- `t`: Time
-- `f`: Dynamics function
+\[
+\frac{d\mathbf{z}(t)}{dt} = f(\mathbf{z}(t), t, \theta)
+\]
 
 ### Solution
 
-The solution is obtained by integration:
+Given an initial condition $\mathbf{z}(t_0)$, the state at any time $t_i$ is found by solving the Initial Value Problem (IVP):
 
-```
-z(t) = z(0) + ∫ f(z(s), s) ds from 0 to t
-```
+\[
+\mathbf{z}(t_i) = \mathbf{z}(t_0) + \int_{t_0}^{t_i} f(\mathbf{z}(s), s, \theta) ds = \text{ODESolve}(\mathbf{z}(t_0), f, t_0, t_i, \theta)
+\]
 
 ## Neural ODEs
 
 ### Concept
 
-Replace the dynamics function `f` with a neural network:
+In a Neural ODE, the dynamics function $f$ is approximated by a neural network with parameters $\theta$:
 
-```
-dz/dt = NN(z, t)
-```
+\[
+\frac{d\mathbf{z}(t)}{dt} = \text{NN}(\mathbf{z}(t), t, \theta)
+\]
 
-Where `NN` is a neural network.
+### Optimization via Adjoint Sensitivity
 
-### Advantages
+To train the model, we need gradients of a loss $L$ with respect to $\theta$. The Adjoint Method avoids backpropagating through the internal stages of the ODE solver by solving a second, backwards-in-time ODE for the "adjoint" state $\mathbf{a}(t) = \partial L / \partial \mathbf{z}(t)$:
 
-1. **Continuous-time**: Predict at arbitrary time points
-2. **Physics-informed**: Can incorporate physical constraints
-3. **Flexible**: Learn complex dynamics from data
-4. **Interpretable**: Latent state may have physical meaning
+\[
+\frac{d\mathbf{a}(t)}{dt} = -\mathbf{a}(t)^\top \frac{\partial f(\mathbf{z}(t), t, \theta)}{\partial \mathbf{z}}
+\]
+
+This allows for constant memory cost $O(1)$ relative to the number of solver steps.
 
 ## Application to Battery Degradation
 
@@ -54,11 +50,12 @@ Where `NN` is a neural network.
 
 Battery degradation can be modeled as:
 
-```
+```text
 dSOH/dt = f(SOH, conditions, t)
 ```
 
 Where:
+
 - `SOH`: State of Health
 - `conditions`: Temperature, C-rate, etc.
 - `f`: Degradation dynamics (learned by neural network)
@@ -67,12 +64,13 @@ Where:
 
 Use latent state to capture degradation mechanisms:
 
-```
+```text
 dz/dt = NN(z, conditions, t)
 SOH = Decoder(z)
 ```
 
 Where:
+
 - `z`: Latent degradation state
 - `Decoder`: Maps latent state to SOH
 
@@ -141,6 +139,7 @@ model = NeuralODEModel(use_adjoint=True)  # Saves memory
 ### How It Works
 
 Instead of storing intermediate states, the adjoint method:
+
 1. Solves forward ODE
 2. Solves backward adjoint ODE
 3. Computes gradients efficiently

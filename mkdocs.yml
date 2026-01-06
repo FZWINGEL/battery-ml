@@ -56,6 +56,11 @@ plugins:
             show_submodules: true
   - mermaid2
 
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
@@ -72,6 +77,8 @@ markdown_extensions:
       alternate_style: true
   - pymdownx.tasklist:
       custom_checkbox: true
+  - pymdownx.arithmatex:
+      generic: true
   - admonition
   - pymdownx.details
   - attr_list
@@ -95,13 +102,13 @@ nav:
     - user-guide/configuration.md
     - user-guide/splits.md
   - API Reference:
+    - api/config.md
     - api/data.md
     - api/pipelines.md
     - api/models.md
     - api/training.md
     - api/tracking.md
     - api/explainability.md
-    - api/config.md
   - Architecture:
     - architecture/overview.md
     - architecture/data-flow.md

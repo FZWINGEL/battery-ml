@@ -1,5 +1,7 @@
 # Tracking API Reference
 
+The `tracking` module implements experiment management. The `DualTracker` allows for simultaneous logging to local JSON/TensorBoard files and a remote or local MLflow server, ensuring both real-time visualization and long-term experiment comparison.
+
 ::: src.tracking.base
     options:
       show_root_heading: true

@@ -1,5 +1,7 @@
 # Data API Reference
 
+The `data` module provides utilities for discovering experimental files, resolving symbolic paths for the LG M50T dataset, and performing unit conversions (e.g., mAh to Ah, °C to K). It also implements various data splitting strategies for cross-validation and holdout testing.
+
 ::: src.data.expt_paths
     options:
       show_root_heading: true

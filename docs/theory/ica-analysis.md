@@ -10,30 +10,37 @@ Incremental Capacity Analysis (ICA) is a powerful technique for analyzing batter
 
 ### dQ/dV Curve
 
-The dQ/dV curve is computed as:
+The Incremental Capacity ($dQ/dV$) is the numerical derivative of battery capacity with respect to the terminal voltage:
 
-```
-dQ/dV = d(Charge Capacity) / d(Voltage)
-```
+\[
+\text{IC}(V) = \frac{dQ}{dV} \approx \frac{Q_{i+1} - Q_i}{V_{i+1} - V_i}
+\]
 
-This curve reveals phase transitions and electrochemical processes in the battery.
+Since raw voltage data is often noisy, numerical differentiation can amplify noise. BatteryML uses high-order Savitzky-Golay filters to smooth the signal:
+
+\[
+Y_j = \frac{\sum_{i=-k}^k C_i y_{j+i}}{N}
+\]
+
+Where $C_i$ are the filter coefficients and $2k+1$ is the window size.
 
 ### Physical Interpretation
 
-- **Peaks**: Represent phase transitions or electrochemical reactions
-- **Peak positions**: Indicate state of charge (SOC) at which transitions occur
-- **Peak heights**: Related to amount of active material
-- **Peak widths**: Related to kinetic limitations
+- **Peaks**: Correspond to phase transition plateaus in the $V-Q$ curve (Gibbs Phase Rule).
+- **Peak positions**: Indicate the state of equilibrium potentials where phase transitions occur.
+- **Peak heights**: Proportional to the amount of active material undergoing phase transformation.
 
 ## Degradation Indicators
 
 ### Loss of Lithium Inventory (LLI)
 
-**Indicator**: Peak shifts to higher voltage
+**Indicator**: Peak shifts in the voltage domain.
 
-**Explanation**: Less lithium available shifts transitions to higher voltages
+If the amount of cyclable lithium decreases due to SEI growth, the corresponding phase transitions occur at different stoichiometry points, leading to a shift:
 
-**Example**: Peak at 3.5V shifts to 3.6V
+\[
+\Delta V_{peak} \propto \Delta \text{Li}_{\text{inv}}
+\]
 
 ### Loss of Active Material (LAM)
 
@@ -62,6 +69,7 @@ This curve reveals phase transitions and electrochemical processes in the batter
 ### Features
 
 For each peak:
+
 - **Voltage**: Peak position (V)
 - **Height**: Peak magnitude (dQ/dV)
 - **Width**: Full-width at half-maximum (FWHM)

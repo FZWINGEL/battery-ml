@@ -5,6 +5,7 @@ This document provides background on battery degradation modeling.
 ## Overview
 
 Battery degradation refers to the gradual loss of capacity and performance over time and use. Understanding degradation mechanisms is crucial for:
+
 - Predicting remaining useful life
 - Optimizing battery usage
 - Designing better batteries
@@ -16,11 +17,13 @@ Battery degradation refers to the gradual loss of capacity and performance over 
 **Description**: Loss of active lithium ions that can participate in charge/discharge cycles.
 
 **Causes**:
+
 - SEI (Solid Electrolyte Interphase) growth
 - Lithium plating
 - Side reactions
 
 **Indicators**:
+
 - Capacity fade
 - Voltage curve shifts (in ICA analysis)
 
@@ -29,11 +32,13 @@ Battery degradation refers to the gradual loss of capacity and performance over 
 **Description**: Loss of active electrode material (anode or cathode).
 
 **Causes**:
+
 - Particle cracking
 - Electrode delamination
 - Material dissolution
 
 **Indicators**:
+
 - Capacity fade
 - Peak height changes in ICA
 
@@ -42,21 +47,23 @@ Battery degradation refers to the gradual loss of capacity and performance over 
 **Description**: Increase in internal resistance.
 
 **Causes**:
+
 - SEI growth
 - Contact loss
 - Electrolyte degradation
 
 **Indicators**:
+
 - Voltage drop under load
 - Peak width changes in ICA
 
 ## State of Health (SOH)
 
-SOH is a key metric for battery health:
+SOH is a key metric for battery health, defined as the ratio of current capacity to the nominal initial capacity:
 
-```
-SOH = Current Capacity / Initial Capacity
-```
+\[
+\text{SOH} = \frac{Q_{\text{current}}}{Q_{\text{initial}}}
+\]
 
 - **SOH = 1.0**: New battery (100% capacity)
 - **SOH = 0.8**: 80% capacity remaining
