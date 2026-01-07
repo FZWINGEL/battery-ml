@@ -30,18 +30,24 @@ class AttentionLayer(nn.Module):
         
         Args:
             input_dim: Input feature dimension
-            hidden_dim: Hidden dimension for attention
+            hidden_dim: Hidden dimension for attention (must be divisible by num_heads)
             num_heads: Number of attention heads
         """
         super().__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         
+        # Project input to hidden_dim (divisible by num_heads) before attention
+        self.input_proj = nn.Linear(input_dim, hidden_dim)
+        
         self.attention = nn.MultiheadAttention(
-            input_dim, num_heads,
+            hidden_dim, num_heads,
             batch_first=True,
             dropout=0.1,
         )
+        
+        # Project back to input_dim after attention
+        self.output_proj = nn.Linear(hidden_dim, input_dim)
         
         self.layer_norm = nn.LayerNorm(input_dim)
     
@@ -55,8 +61,14 @@ class AttentionLayer(nn.Module):
             attended: Attended sequence (batch, seq_len, input_dim)
             attn_weights: Attention weights (batch, seq_len, seq_len)
         """
-        # Self-attention
-        attn_out, attn_weights = self.attention(x, x, x)
+        # Project input to hidden_dim (divisible by num_heads)
+        x_proj = self.input_proj(x)
+        
+        # Self-attention in hidden_dim space
+        attn_out, attn_weights = self.attention(x_proj, x_proj, x_proj)
+        
+        # Project back to input_dim
+        attn_out = self.output_proj(attn_out)
         
         # Residual connection + layer norm
         attended = self.layer_norm(attn_out + x)
@@ -215,7 +227,7 @@ class ACLAModel(BaseModel):
                  solver: str = "dopri5",
                  rtol: float = 1e-4,
                  atol: float = 1e-5,
-                 use_adjoint: bool = True):
+                 use_adjoint: bool = False):
         """Initialize the ACLA model.
         
         Args:
@@ -227,7 +239,10 @@ class ACLAModel(BaseModel):
             solver: ODE solver ("dopri5", "euler", "rk4", etc.)
             rtol: Relative tolerance for solver
             atol: Absolute tolerance for solver
-            use_adjoint: Use adjoint method for memory-efficient gradients
+            use_adjoint: Use adjoint method for memory-efficient gradients.
+                         Default False (direct backprop) gives better accuracy and is faster
+                         for short sequences. Set True only for very long sequences or
+                         memory-constrained scenarios.
         """
         super().__init__(input_dim, output_dim)
         

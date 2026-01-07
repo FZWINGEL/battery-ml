@@ -60,7 +60,9 @@ class ExperimentPaths:
         Returns:
             Path to the Performance Summary CSV file
         """
-        filename = f"Expt {self.experiment_id} - cell {cell_id} ({temp_C}degC) - Processed Data.csv"
+        # Experiment 2 uses "2,2" in filenames, not "2"
+        exp_label = "2,2" if self.experiment_id == 2 else str(self.experiment_id)
+        filename = f"Expt {exp_label} - cell {cell_id} ({temp_C}degC) - Processed Data.csv"
         return self.expt_path / "Summary Data" / "Performance Summary" / filename
     
     def summary_per_cycle(self, cell_id: str) -> Path:
@@ -72,7 +74,9 @@ class ExperimentPaths:
         Returns:
             Path to the Summary per Cycle CSV file
         """
-        filename = f"expt {self.experiment_id} - cell {cell_id} - cycle_data.csv"
+        # Experiment 2 uses "2,2" in filenames, not "2"
+        exp_label = "2,2" if self.experiment_id == 2 else str(self.experiment_id)
+        filename = f"expt {exp_label} - cell {cell_id} - cycle_data.csv"
         return (self.expt_path / "Summary Data" / "Ageing Sets Summary" / 
                 "Summary per Cycle" / filename)
     
@@ -85,7 +89,9 @@ class ExperimentPaths:
         Returns:
             Path to the Summary per Set CSV file
         """
-        filename = f"expt {self.experiment_id} - cell {cell_id} - set_data.csv"
+        # Experiment 2 uses "2,2" in filenames, not "2"
+        exp_label = "2,2" if self.experiment_id == 2 else str(self.experiment_id)
+        filename = f"expt {exp_label} - cell {cell_id} - set_data.csv"
         return (self.expt_path / "Summary Data" / "Ageing Sets Summary" / 
                 "Summary per Set" / filename)
     
@@ -108,7 +114,9 @@ class ExperimentPaths:
             Path to the voltage curve CSV file
         """
         cell_dir = f"{self.cell_prefix} {cell_id}"
-        filename = f"Expt {self.experiment_id} - cell {cell_id} - RPT{rpt} - {curve_type} {direction} data.csv"
+        # Experiment 2 uses "2,2" in filenames, not "2"
+        exp_label = "2,2" if self.experiment_id == 2 else str(self.experiment_id)
+        filename = f"Expt {exp_label} - cell {cell_id} - RPT{rpt} - {curve_type} {direction} data.csv"
         return (self.expt_path / "Processed Timeseries Data" / 
                 f"{curve_type} Voltage Curves" / cell_dir / filename)
     

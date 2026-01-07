@@ -1290,8 +1290,18 @@ def main():
             try:
                 import matplotlib.pyplot as plt
                 
-                # Select one cell for visualization
-                sample_idx = 0
+                # Select Cell E for visualization
+                sample_idx = None
+                for idx, s in enumerate(val_samples):
+                    if s.meta.get('cell_id') == 'E':
+                        sample_idx = idx
+                        break
+                
+                # Fallback to first sample if Cell E not found
+                if sample_idx is None:
+                    sample_idx = 0
+                    logger.warning("  Cell E not found in validation samples, using first sample instead")
+                
                 sample = val_samples[sample_idx].to_device(device)
                 cell_id = sample.meta['cell_id']
                 

@@ -15,13 +15,19 @@ from .losses import LossRegistry
 logger = logging.getLogger(__name__)
 
 # Handle different PyTorch versions for AMP
+# PyTorch 2.0+ uses torch.amp, older versions use torch.cuda.amp
+HAS_AMP = False
+AMP_NEW_API = False  # True if using torch.amp (new API with device_type param)
+
 try:
-    from torch.cuda.amp import GradScaler, autocast
+    from torch.amp import GradScaler, autocast
     HAS_AMP = True
+    AMP_NEW_API = True
 except ImportError:
     try:
-        from torch.amp import GradScaler, autocast
+        from torch.cuda.amp import GradScaler, autocast
         HAS_AMP = True
+        AMP_NEW_API = False
     except ImportError:
         HAS_AMP = False
         logger.warning("AMP not available in this PyTorch version")
@@ -100,7 +106,8 @@ class Trainer:
             HAS_AMP
         )
         if self.use_amp:
-            self.scaler = GradScaler()
+            # Handle different PyTorch AMP API versions
+            self.scaler = GradScaler('cuda') if AMP_NEW_API else GradScaler()
         else:
             self.scaler = None
         
@@ -260,7 +267,9 @@ class Trainer:
             self.optimizer.zero_grad(set_to_none=True)
             
             if self.use_amp:
-                with autocast(device_type='cuda'):
+                # Handle different PyTorch AMP API versions
+                amp_context = autocast('cuda') if AMP_NEW_API else autocast()
+                with amp_context:
                     pred = self.model(X, t=t)
                     loss = self.criterion(pred, y)
                 
@@ -301,7 +310,9 @@ class Trainer:
                 t = None
             
             if self.use_amp:
-                with autocast(device_type='cuda'):
+                # Handle different PyTorch AMP API versions
+                amp_context = autocast('cuda') if AMP_NEW_API else autocast()
+                with amp_context:
                     pred = self.model(X, t=t)
                     loss = self.criterion(pred, y)
             else:
