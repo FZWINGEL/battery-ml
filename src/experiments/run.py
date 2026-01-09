@@ -227,7 +227,7 @@ class ExperimentRunner:
             self.tracker = DualTracker(
                 local_base_dir=str(project_root / "artifacts/runs"),
                 use_tensorboard=self.config.tracking.use_tensorboard,
-                mlflow_uri=self.config.tracking.mlflow_uri,
+                mlflow_tracking_uri=self.config.tracking.mlflow_uri,
                 mlflow_experiment_name=self.config.tracking.experiment_name
             )
         else:
