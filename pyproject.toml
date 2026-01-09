@@ -1,0 +1,43 @@
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+include = "\\.pyi?$"
+extend-exclude = """
+(
+  ^/Raw\\ Data/
+| ^/artifacts/
+| ^/outputs/
+| ^/site/
+| ^/mlruns/
+)
+"""
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+extend-exclude = [
+  "Raw Data",
+  "artifacts",
+  "outputs",
+  "site",
+  "mlruns",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
+[tool.mypy]
+python_version = "3.8"
+follow_imports = "skip"
+ignore_missing_imports = true
+ignore_errors = true
+warn_unused_ignores = true
+show_error_codes = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

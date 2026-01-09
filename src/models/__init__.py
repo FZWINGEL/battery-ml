@@ -14,4 +14,10 @@ from . import neural_ode
 __all__ = [
     "BaseModel",
     "ModelRegistry",
+    "acla",
+    "cnn_lstm",
+    "lgbm",
+    "mlp",
+    "lstm_attn",
+    "neural_ode",
 ]
