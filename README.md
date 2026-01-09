@@ -51,6 +51,7 @@ BatteryML addresses the key challenge in battery degradation research: **buildin
 | ----------------------------- | --------------------------------------------------------------------- |
 | **Canonical Sample Schema**   | Universal `Sample` dataclass decoupling pipelines from models         |
 | **Registry Pattern**          | Decorator-based registration for extensible pipelines and models      |
+| **DataLoaderRegistry**        | Pipeline-to-data-format mapping for unified experiment orchestration   |
 | **Hash-Based Caching**        | Expensive ICA computations cached to disk with automatic invalidation |
 | **Hydra Configuration**       | Composable YAML configs for reproducible experiments                  |
 
@@ -59,9 +60,11 @@ BatteryML addresses the key challenge in battery degradation research: **buildin
 | Feature                        | Description                                                            |
 | ------------------------------ | ---------------------------------------------------------------------- |
 | **Multi-Experiment Support**   | Path resolution for Experiments 1-5 with naming convention handling    |
+| **Pipeline-Specific Loading**  | Automatic data format selection (summary vs. voltage curves)           |
 | **Unit Normalization**         | Automatic mAh→Ah, °C→K conversions                                     |
 | **Temperature Holdout Split**  | Train on 10°C+40°C, validate on 25°C for interpolation testing         |
 | **LOCO Cross-Validation**      | Leave-One-Cell-Out for generalization assessment                       |
+| **Optimized Data I/O**         | Per-temperature caching to reduce redundant file operations             |
 
 ### Models & Training
 
@@ -138,24 +141,55 @@ h:\Research_Module\battery-ml\Raw Data\
 ```bash
 # Milestone A: LightGBM baseline on summary features
 python examples/milestone_a.py
+
+# Or use the unified experiment runner
+python examples/run.py pipeline=summary_set model=lgbm
+
+# Try voltage curve features with LSTM
+python examples/run.py pipeline=ica_peaks model=lstm_attn training.epochs=100
 ```
 
 Expected output:
 
 ```text
 ============================================================
-Milestone A: LGBM Baseline on Summary Data
+Experiment: battery_degradation
+Model: lgbm
+Pipeline: summary_set
+Split: temperature_holdout
 ============================================================
 
-[1/6] Loading data...
+[1/7] Setting up data loader...
+  ✓ Data format: summary
+  ✓ Experiment: 5
+  ✓ Base path: Raw Data
+
+[2/7] Loading data...
   ✓ Loaded 168 samples from 8 cells
 
-[2/6] Creating feature pipeline...
+[3/7] Setting up pipeline...
   ✓ Pipeline: SummarySetPipeline(include_arrhenius=True, ...)
 
-...
+[4/7] Creating samples...
+  ✓ Created 168 samples
+  ✓ Feature dimension: 5
 
-Results (25°C Holdout)
+[5/7] Splitting data...
+  ✓ Temperature holdout: [10, 40] -> [25]
+  ✓ Train: 126 samples
+  ✓ Val:   42 samples
+
+[6/7] Setting up model...
+  ✓ Model: lgbm
+  ✓ Parameters: {'n_estimators': 100, 'max_depth': 6, ...}
+
+[7/7] Setting up tracking...
+  ✓ Tracker: dual
+
+[7/7] Training and evaluating...
+
+========================================
+Results
 ========================================
   RMSE: 0.03425
   MAE:  0.02891
@@ -214,6 +248,7 @@ battery-ml/
 │   │   ├── expt_paths.py       # Experiment path resolution
 │   │   ├── units.py            # Unit conversions
 │   │   ├── tables.py           # CSV loaders
+│   │   ├── registry.py         # DataLoaderRegistry for pipeline-specific loading
 │   │   ├── splits.py           # Train/val/test splits
 │   │   └── discovery.py        # File discovery utilities
 │   │
@@ -250,10 +285,15 @@ battery-ml/
 │       ├── shap_analysis.py    # SHAP values & plots
 │       └── attention_viz.py    # Attention heatmaps
 │
+│   └── experiments/             # Unified experiment orchestration
+│       ├── run.py              # ExperimentRunner class
+│       └── __init__.py         # Module exports
+
 ├── examples/                   # Runnable milestone scripts
 │   ├── milestone_a.py          # LGBM baseline
 │   ├── milestone_b.py          # ICA + SHAP
-│   └── milestone_c.py          # Neural ODE vs LSTM
+│   ├── milestone_c.py          # Neural ODE vs LSTM
+│   └── run.py                  # Unified experiment runner entry point
 │
 ├── tests/                      # pytest test suite
 │   ├── conftest.py             # Fixtures
@@ -287,6 +327,32 @@ class Sample:
     t: Optional[Tensor]     # Time vector for ODE models
 ```
 
+### DataLoaderRegistry
+
+Automatically selects the appropriate data loader based on pipeline requirements:
+
+```python
+from src.data import DataLoaderRegistry
+
+# Pipeline-specific data loading
+registry = DataLoaderRegistry(
+    experiment_id=5,
+    base_path=Path("Raw Data")
+)
+
+# Summary pipelines get summary data
+data = registry.load_data("summary_set", cells=['A', 'B'], temp_map={25: ['A', 'B']})
+# Returns: {'df': DataFrame}
+
+# Curve pipelines get voltage curves + SOH targets
+data = registry.load_data("ica_peaks", cells=['A', 'B'], temp_map={25: ['A', 'B']})
+# Returns: {'curves': [(voltage, capacity, meta), ...], 'targets': {(cell, rpt): soh, ...}}
+```
+
+**Pipeline-to-Data Mapping:**
+- `summary_set`, `summary_cycle` → Summary statistics CSV
+- `ica_peaks`, `latent_ode_seq` → Voltage curves + SOH targets
+
 ### Registry Pattern
 
 Pipelines and models self-register using decorators:
@@ -316,6 +382,36 @@ loss = LossRegistry.get("huber", delta=0.5)
 # Use in Trainer
 trainer = Trainer(model, config, loss_config={'name': 'physics_informed', 'monotonicity_weight': 0.1})
 ```
+
+### Unified Experiment Runner
+
+The `ExperimentRunner` class orchestrates all components with automatic data loader selection:
+
+```python
+from src.experiments import ExperimentRunner
+
+# Initialize with Hydra config
+runner = ExperimentRunner(cfg)
+
+# Run complete experiment
+results = runner.run()
+```
+
+**Automatic Pipeline-to-Data Matching:**
+- Detects pipeline type from config
+- Selects appropriate data loader via `DataLoaderRegistry`
+- Handles both summary and voltage curve data seamlessly
+
+**Experiment Orchestration Steps:**
+1. Setup data loader (pipeline-specific)
+2. Load data with automatic format selection
+3. Setup pipeline with extracted parameters
+4. Create samples (fit + transform)
+5. Split data (temperature holdout/LOCO)
+6. Setup model with known input dimension
+7. Setup tracking (local + MLflow)
+8. Train and evaluate
+9. Log results
 
 ### Caching
 
@@ -479,13 +575,13 @@ python examples/milestone_c.py
 
 ### Hydra Compose
 
-Swap components via command line:
+Swap components via command line with the unified experiment runner:
 
 ```bash
 # Different model
 python examples/run.py model=mlp
 
-# Different pipeline
+# Different pipeline (automatic data loader selection)
 python examples/run.py pipeline=ica_peaks
 
 # Different split
@@ -497,6 +593,12 @@ python examples/run.py loss=physics_informed
 
 # Override parameters
 python examples/run.py model.learning_rate=0.01 training.epochs=500
+
+# Voltage curve features with LSTM
+python examples/run.py pipeline=ica_peaks model=lstm_attn training.epochs=100
+
+# Neural ODE with sequences
+python examples/run.py pipeline=latent_ode_seq model=neural_ode
 ```
 
 ### Example Config
