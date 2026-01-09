@@ -1,0 +1,75 @@
+data:
+  experiment_id: 5
+  base_path: Raw Data
+  cells:
+  - A
+  - B
+  - C
+  - D
+  - E
+  - F
+  - G
+  - H
+  temp_map:
+    10:
+    - A
+    - B
+    - C
+    25:
+    - D
+    - E
+    40:
+    - F
+    - G
+    - H
+pipeline:
+  name: ica_peaks
+  sg_window: 51
+  sg_order: 3
+  num_peaks: 3
+  voltage_range:
+  - 3.0
+  - 4.2
+  resample_points: 500
+  normalize: true
+  use_cache: true
+model:
+  name: lstm_attn
+  hidden_dim: 64
+  num_layers: 2
+  num_heads: 4
+  dropout: 0.1
+split:
+  strategy: temperature_holdout
+  train_temps:
+  - 10
+  - 40
+  val_temps:
+  - 25
+  test_temps:
+  - 25
+tracking:
+  backend: dual
+  base_dir: artifacts/runs
+  use_tensorboard: true
+  mlflow_uri: file:./artifacts/mlruns
+  experiment_name: battery_degradation
+loss:
+  name: mse
+  reduction: mean
+experiment:
+  name: battery_degradation
+  seed: 42
+training:
+  epochs: 5
+  batch_size: 32
+  learning_rate: 0.001
+  weight_decay: 0.01
+  early_stopping_patience: 20
+  gradient_clip: 1.0
+  use_amp: true
+  scheduler_T0: 50
+paths:
+  artifacts: artifacts
+  cache: artifacts/cache
+  runs: artifacts/runs

@@ -1,10 +1,9 @@
 """Data loader registry for pipeline-specific data loading."""
 
-from typing import Dict, Type, Any, List, Tuple
+from typing import Dict, Any, List
 from pathlib import Path
-import numpy as np
-import pandas as pd
 import logging
+import pandas as pd
 
 from .tables import SummaryDataLoader, TimeseriesDataLoader
 
@@ -83,6 +82,9 @@ class DataLoaderRegistry:
             for cell in cell_list:
                 cell_to_temp[cell] = temp
         
+        # Cache summary data per temperature to avoid repeated file I/O
+        summary_cache = {}
+        
         curves = []
         targets = {}
         
@@ -93,23 +95,30 @@ class DataLoaderRegistry:
                 # Load all voltage curves for this cell
                 cell_curves = timeseries_loader.load_all_curves(cell_id, curve_type, direction)
                 
-                # Load summary data to get SOH targets
-                try:
-                    summary_df = summary_loader.load_performance_summary(cell_id, temp_C)
-                except FileNotFoundError:
-                    summary_df = None
-                    logger.warning(f"No summary data for cell {cell_id}, using capacity as target")
+                # Load summary data to get SOH targets (use cache)
+                if temp_C not in summary_cache:
+                    try:
+                        summary_cache[temp_C] = summary_loader.load_performance_summary(cell_id, temp_C)
+                    except FileNotFoundError:
+                        summary_cache[temp_C] = None
+                        logger.warning(f"No summary data for cell {cell_id} at {temp_C}°C")
+                
+                summary_df = summary_cache[temp_C]
                 
                 for rpt_id, curve_df in cell_curves.items():
-                    # Extract voltage and capacity arrays
-                    # Column names: 'Voltage (V)', 'Charge (mA.h)'
+                    # Extract voltage and capacity arrays with robust column detection
                     voltage_col = None
                     capacity_col = None
                     
+                    # Define possible column name patterns
+                    voltage_patterns = ['voltage', 'volt', 'v']
+                    capacity_patterns = ['charge', 'capacity', 'cap', 'ah', 'amp']
+                    
                     for c in curve_df.columns:
-                        if 'voltage' in c.lower():
+                        c_lower = c.lower()
+                        if voltage_col is None and any(pattern in c_lower for pattern in voltage_patterns):
                             voltage_col = c
-                        elif 'charge' in c.lower() or 'capacity' in c.lower():
+                        elif capacity_col is None and any(pattern in c_lower for pattern in capacity_patterns):
                             capacity_col = c
                     
                     if voltage_col is None or capacity_col is None:
@@ -132,22 +141,56 @@ class DataLoaderRegistry:
                     if summary_df is not None:
                         # Use the pre-computed SoH column if available
                         if 'SoH' in summary_df.columns:
-                            # Map RPT index to summary row (approximate mapping)
-                            # Use the RPT index to select a row from summary data
-                            if rpt_id < len(summary_df):
-                                soh = summary_df['SoH'].iloc[rpt_id]
+                            # Try to map this RPT to a specific summary row using an explicit identifier
+                            summary_row_idx = None
+                            id_columns = ['rpt_id', 'RPT', 'cycle', 'Cycle', 'cycle_index', 'Cycle_Index']
+                            for id_col in id_columns:
+                                if id_col in summary_df.columns:
+                                    matches = summary_df[summary_df[id_col] == rpt_id]
+                                    if not matches.empty:
+                                        summary_row_idx = matches.index[0]
+                                        break
+                            
+                            if summary_row_idx is not None:
+                                # Prefer an exact identifier-based match when available
+                                soh = summary_df['SoH'].loc[summary_row_idx]
                                 targets[(cell_id, rpt_id)] = soh
                             else:
-                                # If RPT index exceeds summary length, use last available SOH
-                                soh = summary_df['SoH'].iloc[-1]
-                                targets[(cell_id, rpt_id)] = soh
+                                # Fall back to approximate positional mapping between RPT and summary index
+                                logger.warning(
+                                    "Approximate RPT-to-summary mapping for cell %s RPT %s; "
+                                    "using positional index with last-value fallback.",
+                                    cell_id,
+                                    rpt_id,
+                                )
+                                if len(summary_df) > 0:
+                                    if rpt_id < len(summary_df):
+                                        soh = summary_df['SoH'].iloc[rpt_id]
+                                    else:
+                                        # If RPT index exceeds summary length, use last available SOH
+                                        soh = summary_df['SoH'].iloc[-1]
+                                    targets[(cell_id, rpt_id)] = soh
                         else:
                             # Fallback: compute SOH from capacity
                             if 'Cell Capacity [mA h]' in summary_df.columns:
-                                capacity_val = summary_df['Cell Capacity [mA h]'].iloc[min(rpt_id, len(summary_df)-1)]
-                                # Normalize to SOH (assuming initial capacity is max capacity)
-                                initial_capacity = summary_df['Cell Capacity [mA h]'].max()
-                                soh = capacity_val / initial_capacity if initial_capacity > 0 else 1.0
+                                capacity_series = summary_df['Cell Capacity [mA h]']
+                                capacity_val = capacity_series.iloc[min(rpt_id, len(capacity_series) - 1)]
+                                
+                                # Normalize to SOH using a more robust initial capacity estimate
+                                # Use the first available capacity measurement as initial capacity
+                                initial_capacity = capacity_series.iloc[0]
+                                if pd.isna(initial_capacity):
+                                    non_nan = capacity_series.dropna()
+                                    if not non_nan.empty:
+                                        initial_capacity = non_nan.iloc[0]
+                                
+                                if initial_capacity and initial_capacity > 0:
+                                    soh = capacity_val / initial_capacity
+                                else:
+                                    # If we cannot determine a valid initial capacity, fall back to 1.0
+                                    logger.warning(f"Could not determine initial capacity for cell {cell_id}, using SOH=1.0")
+                                    soh = 1.0
+                                
                                 targets[(cell_id, rpt_id)] = soh
                                     
             except Exception as e:

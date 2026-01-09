@@ -18,17 +18,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
-from src.data.tables import SummaryDataLoader
 from src.data.registry import DataLoaderRegistry
 from src.pipelines.registry import PipelineRegistry
 from src.models.registry import ModelRegistry
-from src.pipelines.summary_set import SummarySetPipeline
-from src.pipelines.ica_peaks import ICAPeaksPipeline
-from src.pipelines.latent_ode_seq import LatentODESequencePipeline
-from src.models.lgbm import LGBMModel
-from src.models.mlp import MLPModel
-from src.models.lstm_attn import LSTMAttentionModel
-from src.models.neural_ode import NeuralODEModel
 from src.data.splits import temperature_split, leave_one_cell_out, random_split
 from src.training.metrics import compute_metrics, print_metrics
 from src.tracking.dual_tracker import DualTracker
@@ -131,7 +123,7 @@ class ExperimentRunner:
         print(f"  ✓ Parameters: {pipeline_params}")
         
     def create_samples(self, data: Any) -> List:
-        """Transform raw data to canonical Sample objects."""
+        """Fit pipeline and transform raw data to canonical Sample objects."""
         print("[4/7] Creating samples...")
         
         # Pass data directly - it's already in the format expected by the pipeline
@@ -225,7 +217,7 @@ class ExperimentRunner:
         
     def setup_tracker(self) -> None:
         """Setup experiment tracking."""
-        print("Setting up tracking...")
+        print("[7/7] Setting up tracking...")
         
         # Get project root for paths
         project_root = Path(__file__).parent.parent.parent
@@ -235,7 +227,7 @@ class ExperimentRunner:
             self.tracker = DualTracker(
                 local_base_dir=str(project_root / "artifacts/runs"),
                 use_tensorboard=self.config.tracking.use_tensorboard,
-                mlflow_tracking_uri=f"sqlite:///{project_root}/artifacts/mlflow.db",
+                mlflow_uri=self.config.tracking.mlflow_uri,
                 mlflow_experiment_name=self.config.tracking.experiment_name
             )
         else:
@@ -363,7 +355,9 @@ class ExperimentRunner:
         train_samples, val_samples = self.split_data(samples)
         
         # Now setup model with known input dimension
-        input_dim = samples[0].feature_dim if samples else None
+        input_dim = samples[0].feature_dim if samples and len(samples) > 0 else None
+        if input_dim is None:
+            raise ValueError("No samples created - cannot determine input dimension for model")
         self.setup_model(input_dim=input_dim)
         self.setup_tracker()
         
@@ -371,7 +365,7 @@ class ExperimentRunner:
         metrics = self.train_and_evaluate(train_samples, val_samples)
         
         # Log results
-        run_id = self.log_results(metrics, train_samples, val_samples)
+        self.log_results(metrics, train_samples, val_samples)
         
         print("\n" + "=" * 60)
         print("Experiment Complete!")

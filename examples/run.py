@@ -30,4 +30,8 @@ PROJECT_ROOT = Path(__file__).parent.parent
 if __name__ == "__main__":
     cmd = [sys.executable, "-m", "src.experiments.run"] + sys.argv[1:]
     result = subprocess.run(cmd, cwd=PROJECT_ROOT)
+    if result.returncode != 0:
+        sys.stderr.write(
+            f"Experiment runner failed with exit code {result.returncode} for command: {cmd}\n"
+        )
     sys.exit(result.returncode)

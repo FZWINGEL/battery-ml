@@ -1,0 +1,3 @@
+- pipeline=ica_peaks
+- model=lstm_attn
+- training.epochs=100

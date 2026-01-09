@@ -1,0 +1,2 @@
+- pipeline=ica_peaks
+- model=lstm_attn
