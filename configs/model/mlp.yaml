@@ -1,6 +1,5 @@
 # MLP Model Configuration
-model:
-  name: "mlp"
-  hidden_dims: [64, 32]
-  dropout: 0.1
-  activation: "relu"
+name: "mlp"
+hidden_dims: [64, 32]
+dropout: 0.1
+activation: "relu"

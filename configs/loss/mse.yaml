@@ -1,6 +1,5 @@
 # Default MSE Loss Configuration
 # Standard Mean Squared Error - most common choice for regression
 
-loss:
-  name: "mse"
-  reduction: "mean"
+name: "mse"
+reduction: "mean"

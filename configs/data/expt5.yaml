@@ -1,11 +1,10 @@
 # Experiment 5 - Standard Cycle Aging (Control)
-data:
-  experiment_id: 5
-  base_path: "Raw Data"
-  cells: ["A", "B", "C", "D", "E", "F", "G", "H"]
-  
-  # Cell-to-temperature mapping for Expt 5
-  temp_map:
-    10: ["A", "B", "C"]
-    25: ["D", "E"]
-    40: ["F", "G", "H"]
+experiment_id: 5
+base_path: "Raw Data"
+cells: ["A", "B", "C", "D", "E", "F", "G", "H"]
+
+# Cell-to-temperature mapping for Expt 5
+temp_map:
+  10: ["A", "B", "C"]
+  25: ["D", "E"]
+  40: ["F", "G", "H"]
