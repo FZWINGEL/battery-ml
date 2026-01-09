@@ -1,4 +1,3 @@
 # Leave-One-Cell-Out Split Configuration
-split:
-  strategy: "loco"
-  test_cell: null  # Set dynamically for CV
+strategy: "loco"
+test_cell: null  # Set dynamically for CV

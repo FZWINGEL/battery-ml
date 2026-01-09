@@ -1,9 +1,8 @@
 # Neural ODE Model Configuration
-model:
-  name: "neural_ode"
-  latent_dim: 32
-  hidden_dim: 64
-  solver: "dopri5"
-  rtol: 1e-4
-  atol: 1e-5
-  use_adjoint: true
+name: "neural_ode"
+latent_dim: 32
+hidden_dim: 64
+solver: "dopri5"
+rtol: 1e-4
+atol: 1e-5
+use_adjoint: true

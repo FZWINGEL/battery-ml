@@ -2,7 +2,6 @@
 # Robust loss - less sensitive to outliers than MSE
 # Uses L2 for small errors, L1 for large errors
 
-loss:
-  name: "huber"
-  delta: 1.0                    # Threshold for L1/L2 switch
-  reduction: "mean"
+name: "huber"
+delta: 1.0                    # Threshold for L1/L2 switch
+reduction: "mean"

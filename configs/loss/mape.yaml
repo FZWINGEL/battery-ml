@@ -2,7 +2,6 @@
 # Useful when relative errors matter more than absolute errors
 # Returns loss as percentage (0-100 scale)
 
-loss:
-  name: "mape"
-  epsilon: 1e-8                 # Prevents division by zero
-  reduction: "mean"
+name: "mape"
+epsilon: 1e-8                 # Prevents division by zero
+reduction: "mean"

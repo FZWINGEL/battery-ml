@@ -1,13 +1,10 @@
 # Dual Tracking Configuration (Local + MLflow)
-tracking:
-  backend: "dual"
-  
-  # Local settings
-  local:
-    base_dir: "artifacts/runs"
-    use_tensorboard: true
-  
-  # MLflow settings
-  mlflow:
-    tracking_uri: "file:./artifacts/mlruns"
-    experiment_name: "battery_degradation"
+backend: "dual"
+
+# Local settings
+base_dir: "artifacts/runs"
+use_tensorboard: true
+
+# MLflow settings
+mlflow_uri: "file:./artifacts/mlruns"
+experiment_name: "battery_degradation"

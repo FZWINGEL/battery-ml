@@ -1,0 +1,66 @@
+data:
+  experiment_id: 5
+  base_path: Raw Data
+  cells:
+  - A
+  - B
+  - C
+  - D
+  - E
+  - F
+  - G
+  - H
+  temp_map:
+    10:
+    - A
+    - B
+    - C
+    25:
+    - D
+    - E
+    40:
+    - F
+    - G
+    - H
+pipeline:
+  name: summary_set
+  include_arrhenius: true
+  arrhenius_Ea: 50000.0
+  normalize: true
+model:
+  name: lgbm
+  n_estimators: 1000
+  learning_rate: 0.05
+  max_depth: 6
+  num_leaves: 31
+  reg_alpha: 0.1
+  reg_lambda: 0.1
+  early_stopping_rounds: 50
+split:
+  strategy: loco
+  test_cell: A
+tracking:
+  backend: dual
+  base_dir: artifacts/runs
+  use_tensorboard: true
+  mlflow_uri: file:./artifacts/mlruns
+  experiment_name: battery_degradation
+loss:
+  name: mse
+  reduction: mean
+experiment:
+  name: battery_degradation
+  seed: 42
+training:
+  epochs: 200
+  batch_size: 32
+  learning_rate: 0.001
+  weight_decay: 0.01
+  early_stopping_patience: 20
+  gradient_clip: 1.0
+  use_amp: true
+  scheduler_T0: 50
+paths:
+  artifacts: artifacts
+  cache: artifacts/cache
+  runs: artifacts/runs
